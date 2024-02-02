@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.system.mapper.SysApiMapper">
+    
+
+    <select id="findAllApis" resultType="org.example.system.domin.SysApi">
+        select * from sys_api sysr
+    </select>
+
+    <select id="findApiById" resultType="org.example.system.domin.SysApi" parameterType="long">
+        select * from sys_api where api_id = #{id}
+    </select>
+
+    <update id="addApi" parameterType="org.example.system.domin.SysApi">
+        insert into sys_api(model_name, api_key) values(#{modelName}, #{apiKey})
+    </update>
+
+    <update id="updateApi" parameterType="org.example.system.domin.SysApi">
+        update sys_api set model_name = #{modelName}, api_key = #{apiKey} where api_id = #{apiId}
+    </update>
+
+    <update id="deleteApi" parameterType="Long">
+        delete from sys_api where api_id = #{id}
+    </update>
+
+    
+
+</mapper>

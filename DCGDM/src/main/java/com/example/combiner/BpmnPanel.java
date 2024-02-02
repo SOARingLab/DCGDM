@@ -1,0 +1,399 @@
+package com.example.combiner;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.camunda.bpm.model.bpmn.Bpmn;
+import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.instance.MessageFlow;
+import org.camunda.bpm.model.bpmn.instance.dc.Bounds;
+import org.camunda.bpm.model.bpmn.instance.di.Shape;
+import org.camunda.bpm.model.xml.ModelInstance;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
+import java.util.*;
+
+/**
+ * @Author:ljl
+ * @Date:2023/10/25
+ * @VERSION:1.0
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class BpmnPanel {
+
+    private double initX = 200;
+
+    private double initY = 80;
+
+    private double environmentWidth;
+
+    private double environmentHeight = 200;
+
+    private double space = 50;
+
+    private List<BpmnInfoHolder> bpmnInfoHolders = new ArrayList<>();
+
+    private List<ParticipantHolder> participantHolders = new ArrayList<>();
+
+    private List<ParticipantHolder> sortedParticipantHolders = new ArrayList<>();
+
+    private Map<String, List<MessageFlowInfo>> messageFlowMap = new HashMap<>();
+
+    private List<MessageFlowInfo> messageFlowInfoList = new ArrayList<>();
+
+    private DocumentBuilder documentBuilder;
+
+    private Document document;
+
+    private boolean drawEnvironmentFlag = true;
+
+    private ModelInstance finalModel;
+
+    {
+        try {
+            documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void addBpmnInfo(File file) {
+        BpmnInfoHolder bpmnInfoHolder = new BpmnInfoHolder();
+        try {
+            Document document = documentBuilder.parse(new FileInputStream(file));
+            bpmnInfoHolder.setDocument(document);
+        } catch (SAXException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        // 获取对应的modelInstance
+        BpmnModelInstance modelInstance = Bpmn.readModelFromFile(file);
+        bpmnInfoHolder.setBpmnModelInstance(modelInstance);
+        // 预处理，将messageFlow中转折的线改为直连
+        bpmnInfoHolder.preHandle();
+        bpmnInfoHolders.add(bpmnInfoHolder);
+        // 获取该Bpmn下所有的非environment participant
+        List<ParticipantHolder> participantHolderList = bpmnInfoHolder.obtainParticipantList();
+        participantHolders.addAll(participantHolderList);
+        List<MessageFlow> messageFlowList = bpmnInfoHolder.obtainMessageFlowList();
+        messageFlowList.forEach(messageFlow -> {
+
+            String name = messageFlow.getName();
+            if (!StringUtils.hasText(name)) return ;
+            List<MessageFlowInfo> list = messageFlowMap.get(name);
+            if (CollectionUtils.isEmpty(list)) {
+                list = new ArrayList<>();
+                MessageFlowInfo messageFlowInfo = new MessageFlowInfo(name, messageFlow.getSource().getId(), messageFlow.getTarget().getId());
+                list.add(messageFlowInfo);
+                messageFlowMap.put(name, list);
+                return ;
+            }
+            boolean isMatched = false;
+            Iterator<MessageFlowInfo> iterator = list.iterator();
+            if (Constant.environment.equals(messageFlow.getSource().getId())) {
+                while(iterator.hasNext()) {
+                    MessageFlowInfo next = iterator.next();
+                    if (Constant.environment.equals(next.getTargetRef())) {
+                        isMatched = true;
+                        MessageFlowInfo messageFlowInfo = new MessageFlowInfo();
+                        messageFlowInfo.setName(name);
+                        messageFlowInfo.setSourceRef(next.getSourceRef());
+                        messageFlowInfo.setTargetRef(messageFlow.getTarget().getId());
+                        messageFlowInfoList.add(messageFlowInfo);
+                        iterator.remove();
+                    }
+                }
+            } else if (Constant.environment.equals(messageFlow.getTarget().getId())) {
+                while(iterator.hasNext()) {
+                    MessageFlowInfo next = iterator.next();
+                    if (Constant.environment.equals(next.getSourceRef())) {
+                        isMatched = true;
+                        MessageFlowInfo messageFlowInfo = new MessageFlowInfo();
+                        messageFlowInfo.setName(name);
+                        messageFlowInfo.setSourceRef(messageFlow.getSource().getId());
+                        messageFlowInfo.setTargetRef(next.getTargetRef());
+                        messageFlowInfoList.add(messageFlowInfo);
+                        iterator.remove();
+                    }
+                }
+            }
+            if (!isMatched) {
+                MessageFlowInfo messageFlowInfo = new MessageFlowInfo(name, messageFlow.getSource().getId(), messageFlow.getTarget().getId());
+                list.add(messageFlowInfo);
+            }
+            if (CollectionUtils.isEmpty(list)) {
+                messageFlowMap.remove(name);
+            }
+        });
+        bpmnInfoHolder.removeEnvironment();
+    }
+
+    /**
+     * 根据width生序排序
+     */
+    public void sortParticipantHoldersByWidth() {
+        Collections.sort(participantHolders, (o1, o2) -> (int)(o1.getWidth() - o2.getWidth()));
+    }
+
+    public void initEnvironmentWidth() {
+        if (CollectionUtils.isEmpty(participantHolders)) {
+            throw new RuntimeException("ParticipantHolders.Empty");
+        }
+        int length = participantHolders.size();
+        int l = 0, r = length - 1;
+        if ((length & 1) == 1) {
+            environmentWidth = participantHolders.get(length - 1).getWidth();
+            --r;
+        }
+        while(l < r) {
+            environmentWidth = Math.max(environmentWidth, space + (participantHolders.get(l++).getWidth() +
+                    participantHolders.get(r--).getWidth()));
+        }
+    }
+
+    public void confirmParticipantPositionAndSize() {
+        if (CollectionUtils.isEmpty(participantHolders)) return ;
+        int len = this.participantHolders.size();
+        int l = 0, r = len - 1;
+        if ((len & 1) == 1) {
+            r -= 1;
+        }
+        double startY = initY + environmentHeight + space;
+        while (l < r) {
+            ParticipantHolder pl = participantHolders.get(l);
+            ParticipantHolder pr = participantHolders.get(r);
+
+            pl.adjustSize(initX, startY);
+            sortedParticipantHolders.add(pl);
+            pr.adjustSize(initX + space + pl.getWidth(), startY);
+            sortedParticipantHolders.add(pr);
+            ++l;
+            --r;
+            startY += space + Math.max(pl.getHeight(), pr.getHeight());
+        }
+        if ((len & 1) == 1) {
+            ParticipantHolder participantHolder = participantHolders.get(len - 1);
+            participantHolder.adjustSize(initX, startY);
+            sortedParticipantHolders.add(participantHolder);
+        }
+
+
+    }
+
+    public void drawParticipant() {
+        drawEnvironmentFlag = messageFlowMap.size() > 0;
+        String targetTemplate = "template.bpmn";
+        if (this.drawEnvironmentFlag) {
+            targetTemplate = "environment_template.bpmn";
+        }
+        ClassPathResource classPathResource = new ClassPathResource(targetTemplate);
+        try {
+            BpmnModelInstance modelInstance = Bpmn.readModelFromStream(classPathResource.getInputStream());
+            if (drawEnvironmentFlag) {
+                Shape shape = modelInstance.getModelElementsByType(Shape.class)
+                        .stream()
+                        .filter(s -> Constant.environment.equals(s.getAttributeValue("bpmnElement")))
+                        .findAny()
+                        .get();
+                Bounds bound = shape.getBounds();
+                bound.setX(initX);
+                bound.setY(initY);
+                bound.setWidth(environmentWidth);
+                bound.setHeight(environmentHeight);
+            }
+            String bpmn = Bpmn.convertToString(modelInstance);
+            document = documentBuilder.parse(new ByteArrayInputStream(bpmn.getBytes("UTF-8")));
+            for (BpmnInfoHolder bpmnInfoHolder : bpmnInfoHolders) {
+                BpmnModelInstance bpmnModelInstance = bpmnInfoHolder.getBpmnModelInstance();
+                Document subDoc = documentBuilder.parse(new ByteArrayInputStream(Bpmn.convertToString(bpmnModelInstance).getBytes("UTF-8")));
+                Node definitionsTarget = document.getElementsByTagName("bpmn:definitions").item(0);
+//                Node processTarget = document.getElementsByTagName("bpmn:process").item(0);
+                Node planeTarget = document.getElementsByTagName("bpmndi:BPMNPlane").item(0);
+                Node diagramTarget = document.getElementsByTagName("bpmndi:BPMNDiagram").item(0);
+                Node collaborationTarget = document.getElementsByTagName("bpmn:collaboration").item(0);
+                NodeList childNodes = subDoc.getElementsByTagName("bpmn:collaboration").item(0).getChildNodes();
+
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    if (childNodes.item(i).getNodeName().contains("documentation")) continue;
+                    Node node = document.importNode(childNodes.item(i), true);
+                    collaborationTarget.appendChild(node);
+                }
+
+
+                NodeList subProcessList = subDoc.getElementsByTagName("bpmn:process");
+
+                Node subPlane = subDoc.getElementsByTagName("bpmndi:BPMNPlane").item(0);
+                for (int i = 0; i < subPlane.getChildNodes().getLength(); i++) {
+                    Node node = document.importNode(subPlane.getChildNodes().item(i), true);
+                    planeTarget.appendChild(node);
+                }
+
+                for (int i = 0; i < subProcessList.getLength(); i++) {
+                    Node node = document.importNode(subProcessList.item(i), true);
+                    definitionsTarget.insertBefore(node, diagramTarget);
+                }
+
+            }
+//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+//            transformer.transform(new DOMSource(document), new StreamResult(byteArrayOutputStream));
+//            String xmlStr = byteArrayOutputStream.toString();
+//            finalModel = Bpmn.readModelFromStream(new ByteArrayInputStream(xmlStr.getBytes("UTF-8")));
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("DrawParticipant.Error");
+        }
+    }
+
+    public void drawMessageFlow() {
+        if (document == null) throw new RuntimeException("document.Mull");
+        Node collaboration = document.getElementsByTagName("bpmn:collaboration").item(0);
+        Node plane = document.getElementsByTagName("bpmndi:BPMNPlane").item(0);
+        NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
+        for (MessageFlowInfo messageFlowInfo : messageFlowInfoList) {
+            Element messageFlow = document.createElement("bpmn:messageFlow");
+            String id = "Flow_" + RandomStringUtils.randomAlphanumeric(8);
+            messageFlow.setAttribute("id", id);
+            messageFlow.setAttribute("name", messageFlowInfo.getName());
+            messageFlow.setAttribute("sourceRef", messageFlowInfo.getSourceRef());
+            messageFlow.setAttribute("targetRef", messageFlowInfo.getTargetRef());
+            collaboration.appendChild(messageFlow);
+
+            int flag = 2;
+            Point pointSource = new Point();
+            Point pointTarget = new Point();
+            for (int i = 0; i < shapes.getLength() && flag > 0; i++) {
+                Element item = (Element)shapes.item(i);
+                String bpmnElement = item.getAttribute("bpmnElement");
+                if (bpmnElement != null) {
+                    if (messageFlowInfo.getSourceRef().equals(bpmnElement)) {
+                        flag -= 1;
+                        Element bound = (Element)item.getElementsByTagName("dc:Bounds").item(0);
+                        double x = Double.parseDouble(bound.getAttribute("x"));
+                        double y = Double.parseDouble(bound.getAttribute("y"));
+                        double width = Double.parseDouble(bound.getAttribute("width"));
+                        pointSource.setX(x + width / 2);
+                        pointSource.setY(y);
+                    } else if (messageFlowInfo.getTargetRef().equals(bpmnElement)) {
+                        flag -= 1;
+                        Element bound = (Element)item.getElementsByTagName("dc:Bounds").item(0);
+                        double x = Double.parseDouble(bound.getAttribute("x"));
+                        double y = Double.parseDouble(bound.getAttribute("y"));
+                        double width = Double.parseDouble(bound.getAttribute("width"));
+                        pointTarget.setX(x + width / 2);
+                        pointTarget.setY(y);
+                    }
+                }
+            }
+            if (flag == 0) {
+                Element flowElement = document.createElement("bpmndi:BPMNEdge");
+                flowElement.setAttribute("id", id + "_di");
+                flowElement.setAttribute("bpmnElement", id);
+                Element startPoint = document.createElement("di:waypoint");
+                startPoint.setAttribute("x", String.valueOf(pointSource.getX()));
+                startPoint.setAttribute("y", String.valueOf(pointSource.getY()));
+                flowElement.appendChild(startPoint);
+                Element endPoint = document.createElement("di:waypoint");
+                endPoint.setAttribute("x", String.valueOf(pointTarget.getX()));
+                endPoint.setAttribute("y", String.valueOf(pointTarget.getY()));
+                flowElement.appendChild(endPoint);
+                plane.appendChild(flowElement);
+            }
+
+        }
+
+        if (drawEnvironmentFlag) {
+            for (Map.Entry<String, List<MessageFlowInfo>> listEntry : messageFlowMap.entrySet()) {
+                List<MessageFlowInfo> list = listEntry.getValue();
+                for (MessageFlowInfo messageFlowInfo : list) {
+                    Element messageFlow = document.createElement("bpmn:messageFlow");
+                    String id = "Flow_" + RandomStringUtils.randomAlphanumeric(8);
+                    messageFlow.setAttribute("id", id);
+                    messageFlow.setAttribute("name", messageFlowInfo.getName());
+                    messageFlow.setAttribute("sourceRef", messageFlowInfo.getSourceRef());
+                    messageFlow.setAttribute("targetRef", messageFlowInfo.getTargetRef());
+                    collaboration.appendChild(messageFlow);
+                    Point pointSource = null;
+                    Point pointTarget = null;
+                    if (Constant.environment.equals(messageFlowInfo.getTargetRef())) {
+                        for (int i = 0; i < shapes.getLength(); i++) {
+                            Element item = (Element) shapes.item(i);
+                            String bpmnElement = item.getAttribute("bpmnElement");
+                            if (bpmnElement != null) {
+                                if (messageFlowInfo.getSourceRef().equals(bpmnElement)) {
+                                    Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
+                                    double x = Double.parseDouble(bound.getAttribute("x"));
+                                    double y = Double.parseDouble(bound.getAttribute("y"));
+                                    double width = Double.parseDouble(bound.getAttribute("width"));
+                                    pointSource = new Point(x + width / 2, y);
+                                    pointTarget = new Point(x + width / 2, initY + environmentHeight);
+                                }
+                            }
+                        }
+                    } else if (Constant.environment.equals(messageFlowInfo.getSourceRef())) {
+                        for (int i = 0; i < shapes.getLength(); i++) {
+                            Element item = (Element) shapes.item(i);
+                            String bpmnElement = item.getAttribute("bpmnElement");
+                            if (bpmnElement != null) {
+                                if (messageFlowInfo.getTargetRef().equals(bpmnElement)) {
+                                    Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
+                                    double x = Double.parseDouble(bound.getAttribute("x"));
+                                    double y = Double.parseDouble(bound.getAttribute("y"));
+                                    double width = Double.parseDouble(bound.getAttribute("width"));
+                                    pointTarget = new Point(x + width / 2, y);
+                                    pointSource = new Point(x + width / 2, initY + environmentHeight);
+                                }
+                            }
+                        }
+                    }
+                    if (pointSource != null && pointTarget != null) {
+                        Element flowElement = document.createElement("bpmndi:BPMNEdge");
+                        flowElement.setAttribute("id", id + "_di");
+                        flowElement.setAttribute("bpmnElement", id);
+                        Element startPoint = document.createElement("di:waypoint");
+                        startPoint.setAttribute("x", String.valueOf(pointSource.getX()));
+                        startPoint.setAttribute("y", String.valueOf(pointSource.getY()));
+                        flowElement.appendChild(startPoint);
+                        Element endPoint = document.createElement("di:waypoint");
+                        endPoint.setAttribute("x", String.valueOf(pointTarget.getX()));
+                        endPoint.setAttribute("y", String.valueOf(pointTarget.getY()));
+                        flowElement.appendChild(endPoint);
+                        plane.appendChild(flowElement);
+                    }
+                }
+
+            }
+        }
+    }
+
+    public String testXml() {
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.transform(new DOMSource(document), new StreamResult(byteArrayOutputStream));
+            String xmlStr = byteArrayOutputStream.toString();
+            System.out.println(xmlStr);
+            return xmlStr;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+}
