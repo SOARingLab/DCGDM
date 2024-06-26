@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_0ylkqzr" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.2.0" modeler:executionPlatform="Camunda Platform">
-<bpmn:collaboration id="Collaboration_1jg4tq8">
+<bpmn:collaboration id="Collaboration_Combine">
     <bpmn:participant id="Participant_Environment" name="Environment" processRef="Process_09foa2e" />
   </bpmn:collaboration>
   <bpmn:process id="Process_09foa2e" isExecutable="true" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1jg4tq8">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_Combine">
       <bpmndi:BPMNShape id="Participant_1hgjr0n_di" bpmnElement="Participant_Environment" isHorizontal="true">
         <dc:Bounds x="190" y="40" width="600" height="250" />
         <bpmndi:BPMNLabel />

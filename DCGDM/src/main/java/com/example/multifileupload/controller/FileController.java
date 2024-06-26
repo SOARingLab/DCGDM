@@ -81,11 +81,13 @@ public class FileController {
     @GetMapping("/getCombine")
     public String getCombine(@RequestParam List<String> values) throws IOException {
         String str = "test";
-        File folder = new File(ResourceUtils.getURL("classpath:").getPath()+"src/main/resources");
+//        File folder = new File(ResourceUtils.getURL("classpath:").getPath()+"src/main/resources");
+        File folder = new File("src/main/resources");
         File[] listOfFiles = folder.listFiles();
         BpmnPanel bpmnPanel = new BpmnPanel();
         for (File file : listOfFiles) {
-            if (file.isFile() && file.getName().contains(".bpmn") && values.contains(file.getName())) {
+//            if (file.isFile() && file.getName().contains(".bpmn") && values.contains(file.getName())) {
+            if(file.getName().equals("a.bpmn") || file.getName().equals("b.bpmn")){
                 System.out.println(file.getName());
                 bpmnPanel.addBpmnInfo(file);
             }
@@ -99,13 +101,12 @@ public class FileController {
         str = bpmnPanel.testXml();
 
 
-        File fileExist = new File(ResourceUtils.getURL("classpath:").getPath()+"src/main/resources/collaboration");
+        File fileExist = new File("src/main/resources/collaboration");
         // 文件夹不存在，则新建
         if (!fileExist.exists()) {
             fileExist.mkdirs();
         }
-       TransformMultipartFile2File.fileWriterMethod(ResourceUtils.getURL("classpath:").getPath()+"src/main/resources/collaboration/"+TransformMultipartFile2File.getCurDate()+".bpmn"
-       , str);
+        TransformMultipartFile2File.fileWriterMethod("src/main/resources/collaboration/" + TransformMultipartFile2File.getCurDate() + ".bpmn", str);
         return str;
     }
 

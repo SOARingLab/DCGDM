@@ -196,6 +196,71 @@ public class BpmnPanel {
 
 
     }
+    private void updateShapeIds(Document document) {
+        NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
+        for (int i = 0; i < shapes.getLength(); i++) {
+            Element shape = (Element) shapes.item(i);
+            String oldId = shape.getAttribute("id");
+            if (!oldId.isEmpty()) {
+                String newId = generateUniqueId("Shape");
+                shape.setAttribute("id", newId);
+                updateReferences(document, oldId, newId);
+            }
+        }
+    }
+
+    private void updateReferences(Document document, String oldId, String newId) {
+        NodeList elements = document.getElementsByTagName("*");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element) elements.item(i);
+            if (oldId.equals(element.getAttribute("sourceRef"))) {
+                element.setAttribute("sourceRef", newId);
+            }
+            if (oldId.equals(element.getAttribute("targetRef"))) {
+                element.setAttribute("targetRef", newId);
+            }
+            if (oldId.equals(element.getAttribute("bpmnElement"))) {
+                element.setAttribute("bpmnElement", newId);
+            }
+        }
+    }
+
+    // Generate unique ID
+    private String generateUniqueId(String prefix) {
+        return prefix + "_" + RandomStringUtils.randomAlphanumeric(8);
+    }
+
+
+
+
+    private void cleanUnusedElements(Document document) {
+        NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
+        NodeList edges = document.getElementsByTagName("bpmndi:BPMNEdge");
+
+        Set<String> usedElements = new HashSet<>();
+        NodeList elements = document.getElementsByTagName("*");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element) elements.item(i);
+            if (element.hasAttribute("bpmnElement")) {
+                usedElements.add(element.getAttribute("bpmnElement"));
+            }
+        }
+
+        for (int i = 0; i < shapes.getLength(); i++) {
+            Element shape = (Element) shapes.item(i);
+            if (!usedElements.contains(shape.getAttribute("bpmnElement"))) {
+                shape.getParentNode().removeChild(shape);
+            }
+        }
+
+        for (int i = 0; i < edges.getLength(); i++) {
+            Element edge = (Element) edges.item(i);
+            if (!usedElements.contains(edge.getAttribute("bpmnElement"))) {
+                edge.getParentNode().removeChild(edge);
+            }
+        }
+    }
+
 
     public void drawParticipant() {
         drawEnvironmentFlag = messageFlowMap.size() > 0;
@@ -220,11 +285,14 @@ public class BpmnPanel {
             }
             String bpmn = Bpmn.convertToString(modelInstance);
             document = documentBuilder.parse(new ByteArrayInputStream(bpmn.getBytes("UTF-8")));
+
             for (BpmnInfoHolder bpmnInfoHolder : bpmnInfoHolders) {
                 BpmnModelInstance bpmnModelInstance = bpmnInfoHolder.getBpmnModelInstance();
                 Document subDoc = documentBuilder.parse(new ByteArrayInputStream(Bpmn.convertToString(bpmnModelInstance).getBytes("UTF-8")));
+
+                updateShapeIds(subDoc);  // 调用方法以更新Shape ID
+
                 Node definitionsTarget = document.getElementsByTagName("bpmn:definitions").item(0);
-//                Node processTarget = document.getElementsByTagName("bpmn:process").item(0);
                 Node planeTarget = document.getElementsByTagName("bpmndi:BPMNPlane").item(0);
                 Node diagramTarget = document.getElementsByTagName("bpmndi:BPMNDiagram").item(0);
                 Node collaborationTarget = document.getElementsByTagName("bpmn:collaboration").item(0);
@@ -233,9 +301,19 @@ public class BpmnPanel {
                 for (int i = 0; i < childNodes.getLength(); i++) {
                     if (childNodes.item(i).getNodeName().contains("documentation")) continue;
                     Node node = document.importNode(childNodes.item(i), true);
+                    // Generate unique IDs for imported nodes
+                    if (node instanceof Element) {
+                        Element element = (Element) node;
+                        String oldId = element.getAttribute("id");
+                        if (!oldId.isEmpty()) {
+                            String newId = generateUniqueId(oldId);
+                            element.setAttribute("id", newId);
+                            updateReferences(subDoc, oldId, newId);
+                            cleanUnusedElements(document); // 清理未使用的元素
+                        }
+                    }
                     collaborationTarget.appendChild(node);
                 }
-
 
                 NodeList subProcessList = subDoc.getElementsByTagName("bpmn:process");
 
@@ -251,25 +329,48 @@ public class BpmnPanel {
                 }
 
             }
-//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-//            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-//            transformer.transform(new DOMSource(document), new StreamResult(byteArrayOutputStream));
-//            String xmlStr = byteArrayOutputStream.toString();
-//            finalModel = Bpmn.readModelFromStream(new ByteArrayInputStream(xmlStr.getBytes("UTF-8")));
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("DrawParticipant.Error");
         }
+        // 在绘制完参与者后调用cleanUnusedShapes()方法
+        cleanUnusedShapes();
     }
+    private void cleanUnusedShapes() {
+        NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
+        NodeList edges = document.getElementsByTagName("bpmndi:BPMNEdge");
 
+        Set<String> usedElements = new HashSet<>();
+        NodeList elements = document.getElementsByTagName("*");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element) elements.item(i);
+            if (element.hasAttribute("bpmnElement")) {
+                usedElements.add(element.getAttribute("bpmnElement"));
+            }
+        }
+
+        for (int i = 0; i < shapes.getLength(); i++) {
+            Element shape = (Element) shapes.item(i);
+            if (!usedElements.contains(shape.getAttribute("bpmnElement"))) {
+                shape.getParentNode().removeChild(shape);
+            }
+        }
+
+        for (int i = 0; i < edges.getLength(); i++) {
+            Element edge = (Element) edges.item(i);
+            if (!usedElements.contains(edge.getAttribute("bpmnElement"))) {
+                edge.getParentNode().removeChild(edge);
+            }
+        }
+    }
     public void drawMessageFlow() {
-        if (document == null) throw new RuntimeException("document.Mull");
+        if (document == null) throw new RuntimeException("document.Null");
         Node collaboration = document.getElementsByTagName("bpmn:collaboration").item(0);
         Node plane = document.getElementsByTagName("bpmndi:BPMNPlane").item(0);
         NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
         for (MessageFlowInfo messageFlowInfo : messageFlowInfoList) {
             Element messageFlow = document.createElement("bpmn:messageFlow");
-            String id = "Flow_" + RandomStringUtils.randomAlphanumeric(8);
+            String id = generateUniqueId("Flow");
             messageFlow.setAttribute("id", id);
             messageFlow.setAttribute("name", messageFlowInfo.getName());
             messageFlow.setAttribute("sourceRef", messageFlowInfo.getSourceRef());
@@ -280,12 +381,12 @@ public class BpmnPanel {
             Point pointSource = new Point();
             Point pointTarget = new Point();
             for (int i = 0; i < shapes.getLength() && flag > 0; i++) {
-                Element item = (Element)shapes.item(i);
+                Element item = (Element) shapes.item(i);
                 String bpmnElement = item.getAttribute("bpmnElement");
                 if (bpmnElement != null) {
                     if (messageFlowInfo.getSourceRef().equals(bpmnElement)) {
                         flag -= 1;
-                        Element bound = (Element)item.getElementsByTagName("dc:Bounds").item(0);
+                        Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
                         double x = Double.parseDouble(bound.getAttribute("x"));
                         double y = Double.parseDouble(bound.getAttribute("y"));
                         double width = Double.parseDouble(bound.getAttribute("width"));
@@ -293,7 +394,7 @@ public class BpmnPanel {
                         pointSource.setY(y);
                     } else if (messageFlowInfo.getTargetRef().equals(bpmnElement)) {
                         flag -= 1;
-                        Element bound = (Element)item.getElementsByTagName("dc:Bounds").item(0);
+                        Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
                         double x = Double.parseDouble(bound.getAttribute("x"));
                         double y = Double.parseDouble(bound.getAttribute("y"));
                         double width = Double.parseDouble(bound.getAttribute("width"));
@@ -324,7 +425,7 @@ public class BpmnPanel {
                 List<MessageFlowInfo> list = listEntry.getValue();
                 for (MessageFlowInfo messageFlowInfo : list) {
                     Element messageFlow = document.createElement("bpmn:messageFlow");
-                    String id = "Flow_" + RandomStringUtils.randomAlphanumeric(8);
+                    String id = generateUniqueId("Flow");
                     messageFlow.setAttribute("id", id);
                     messageFlow.setAttribute("name", messageFlowInfo.getName());
                     messageFlow.setAttribute("sourceRef", messageFlowInfo.getSourceRef());
@@ -382,6 +483,7 @@ public class BpmnPanel {
             }
         }
     }
+
 
     public String testXml() {
         try {
