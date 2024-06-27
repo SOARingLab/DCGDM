@@ -7,6 +7,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.MessageFlow;
+import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.dc.Bounds;
 import org.camunda.bpm.model.bpmn.instance.di.Shape;
 import org.camunda.bpm.model.xml.ModelInstance;
@@ -271,6 +272,18 @@ public class BpmnPanel {
         ClassPathResource classPathResource = new ClassPathResource(targetTemplate);
         try {
             BpmnModelInstance modelInstance = Bpmn.readModelFromStream(classPathResource.getInputStream());
+//            ParallelGateway gateway = (ParallelGateway) modelInstance.getModelElementById("Gateway_0cyeibu");
+//            gateway.builder().serviceTask("fakeService1")
+//                    .connectTo("Gateway_1boer0t")
+//                    .done();
+//            gateway.builder().serviceTask("fakeService2")
+//                    .connectTo("Gateway_1boer0t")
+//                    .done();
+//            gateway.builder().serviceTask("fakeService3")
+//                    .connectTo("Gateway_1boer0t")
+//                    .done();
+
+
             if (drawEnvironmentFlag) {
                 Shape shape = modelInstance.getModelElementsByType(Shape.class)
                         .stream()
