@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.camunda.bpm.model.bpmn.builder.AbstractFlowNodeBuilder;
 import org.camunda.bpm.model.bpmn.instance.MessageFlow;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
 import org.camunda.bpm.model.bpmn.instance.dc.Bounds;
@@ -194,9 +195,8 @@ public class BpmnPanel {
             participantHolder.adjustSize(initX, startY);
             sortedParticipantHolders.add(participantHolder);
         }
-
-
     }
+
     private void updateShapeIds(Document document) {
         NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
         for (int i = 0; i < shapes.getLength(); i++) {
@@ -231,9 +231,6 @@ public class BpmnPanel {
         return prefix + "_" + RandomStringUtils.randomAlphanumeric(8);
     }
 
-
-
-
     private void cleanUnusedElements(Document document) {
         NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
         NodeList edges = document.getElementsByTagName("bpmndi:BPMNEdge");
@@ -262,7 +259,6 @@ public class BpmnPanel {
         }
     }
 
-
     public void drawParticipant() {
         drawEnvironmentFlag = messageFlowMap.size() > 0;
         String targetTemplate = "template.bpmn";
@@ -272,17 +268,6 @@ public class BpmnPanel {
         ClassPathResource classPathResource = new ClassPathResource(targetTemplate);
         try {
             BpmnModelInstance modelInstance = Bpmn.readModelFromStream(classPathResource.getInputStream());
-//            ParallelGateway gateway = (ParallelGateway) modelInstance.getModelElementById("Gateway_0cyeibu");
-//            gateway.builder().serviceTask("fakeService1")
-//                    .connectTo("Gateway_1boer0t")
-//                    .done();
-//            gateway.builder().serviceTask("fakeService2")
-//                    .connectTo("Gateway_1boer0t")
-//                    .done();
-//            gateway.builder().serviceTask("fakeService3")
-//                    .connectTo("Gateway_1boer0t")
-//                    .done();
-
 
             if (drawEnvironmentFlag) {
                 Shape shape = modelInstance.getModelElementsByType(Shape.class)
@@ -295,6 +280,14 @@ public class BpmnPanel {
                 bound.setY(initY);
                 bound.setWidth(environmentWidth);
                 bound.setHeight(environmentHeight);
+
+                ParallelGateway gateway = modelInstance.getModelElementById("Gateway_0cyeibu");
+                AbstractFlowNodeBuilder<?, ?> builder = gateway.builder();
+                for (int i = 0; i < messageFlowInfoList.size(); i++) {
+                    builder = builder.serviceTask("fakeService" + (i + 1))
+                            .name("Fake Service " + (i + 1))
+                            .connectTo("Gateway_1boer0t");
+                }
             }
             String bpmn = Bpmn.convertToString(modelInstance);
             document = documentBuilder.parse(new ByteArrayInputStream(bpmn.getBytes("UTF-8")));
@@ -303,7 +296,7 @@ public class BpmnPanel {
                 BpmnModelInstance bpmnModelInstance = bpmnInfoHolder.getBpmnModelInstance();
                 Document subDoc = documentBuilder.parse(new ByteArrayInputStream(Bpmn.convertToString(bpmnModelInstance).getBytes("UTF-8")));
 
-                updateShapeIds(subDoc);  // 调用方法以更新Shape ID
+                updateShapeIds(subDoc);
 
                 Node definitionsTarget = document.getElementsByTagName("bpmn:definitions").item(0);
                 Node planeTarget = document.getElementsByTagName("bpmndi:BPMNPlane").item(0);
@@ -314,7 +307,6 @@ public class BpmnPanel {
                 for (int i = 0; i < childNodes.getLength(); i++) {
                     if (childNodes.item(i).getNodeName().contains("documentation")) continue;
                     Node node = document.importNode(childNodes.item(i), true);
-                    // Generate unique IDs for imported nodes
                     if (node instanceof Element) {
                         Element element = (Element) node;
                         String oldId = element.getAttribute("id");
@@ -322,7 +314,7 @@ public class BpmnPanel {
                             String newId = generateUniqueId(oldId);
                             element.setAttribute("id", newId);
                             updateReferences(subDoc, oldId, newId);
-                            cleanUnusedElements(document); // 清理未使用的元素
+                            cleanUnusedElements(document);
                         }
                     }
                     collaborationTarget.appendChild(node);
@@ -340,15 +332,14 @@ public class BpmnPanel {
                     Node node = document.importNode(subProcessList.item(i), true);
                     definitionsTarget.insertBefore(node, diagramTarget);
                 }
-
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("DrawParticipant.Error");
         }
-        // 在绘制完参与者后调用cleanUnusedShapes()方法
         cleanUnusedShapes();
     }
+
     private void cleanUnusedShapes() {
         NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
         NodeList edges = document.getElementsByTagName("bpmndi:BPMNEdge");
@@ -376,11 +367,13 @@ public class BpmnPanel {
             }
         }
     }
+
     public void drawMessageFlow() {
         if (document == null) throw new RuntimeException("document.Null");
         Node collaboration = document.getElementsByTagName("bpmn:collaboration").item(0);
         Node plane = document.getElementsByTagName("bpmndi:BPMNPlane").item(0);
         NodeList shapes = document.getElementsByTagName("bpmndi:BPMNShape");
+
         for (MessageFlowInfo messageFlowInfo : messageFlowInfoList) {
             Element messageFlow = document.createElement("bpmn:messageFlow");
             String id = generateUniqueId("Flow");
@@ -430,10 +423,10 @@ public class BpmnPanel {
                 flowElement.appendChild(endPoint);
                 plane.appendChild(flowElement);
             }
-
         }
 
         if (drawEnvironmentFlag) {
+            int fakeServiceCount = 1;  // 增加fakeService计数器
             for (Map.Entry<String, List<MessageFlowInfo>> listEntry : messageFlowMap.entrySet()) {
                 List<MessageFlowInfo> list = listEntry.getValue();
                 for (MessageFlowInfo messageFlowInfo : list) {
@@ -441,42 +434,73 @@ public class BpmnPanel {
                     String id = generateUniqueId("Flow");
                     messageFlow.setAttribute("id", id);
                     messageFlow.setAttribute("name", messageFlowInfo.getName());
-                    messageFlow.setAttribute("sourceRef", messageFlowInfo.getSourceRef());
-                    messageFlow.setAttribute("targetRef", messageFlowInfo.getTargetRef());
+                    // 连接到fakeService而不是environment
+                    String fakeServiceId = "fakeService" + fakeServiceCount++;
+                    String sourceRef = messageFlowInfo.getSourceRef().equals(Constant.environment) ? fakeServiceId : messageFlowInfo.getSourceRef();
+                    String targetRef = messageFlowInfo.getTargetRef().equals(Constant.environment) ? fakeServiceId : messageFlowInfo.getTargetRef();
+                    messageFlow.setAttribute("sourceRef", sourceRef);
+                    messageFlow.setAttribute("targetRef", targetRef);
                     collaboration.appendChild(messageFlow);
                     Point pointSource = null;
                     Point pointTarget = null;
-                    if (Constant.environment.equals(messageFlowInfo.getTargetRef())) {
+
+                    // 如果连接的是fakeService则重新计算坐标
+                    if (fakeServiceId.equals(sourceRef)) {
                         for (int i = 0; i < shapes.getLength(); i++) {
                             Element item = (Element) shapes.item(i);
                             String bpmnElement = item.getAttribute("bpmnElement");
-                            if (bpmnElement != null) {
-                                if (messageFlowInfo.getSourceRef().equals(bpmnElement)) {
-                                    Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
-                                    double x = Double.parseDouble(bound.getAttribute("x"));
-                                    double y = Double.parseDouble(bound.getAttribute("y"));
-                                    double width = Double.parseDouble(bound.getAttribute("width"));
-                                    pointSource = new Point(x + width / 2, y);
-                                    pointTarget = new Point(x + width / 2, initY + environmentHeight);
-                                }
+                            if (bpmnElement != null && fakeServiceId.equals(bpmnElement)) {
+                                Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
+                                double x = Double.parseDouble(bound.getAttribute("x"));
+                                double y = Double.parseDouble(bound.getAttribute("y"));
+                                double width = Double.parseDouble(bound.getAttribute("width"));
+                                pointSource = new Point(x + width / 2, y);
+                                break;
                             }
                         }
-                    } else if (Constant.environment.equals(messageFlowInfo.getSourceRef())) {
+                    } else {
                         for (int i = 0; i < shapes.getLength(); i++) {
                             Element item = (Element) shapes.item(i);
                             String bpmnElement = item.getAttribute("bpmnElement");
-                            if (bpmnElement != null) {
-                                if (messageFlowInfo.getTargetRef().equals(bpmnElement)) {
-                                    Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
-                                    double x = Double.parseDouble(bound.getAttribute("x"));
-                                    double y = Double.parseDouble(bound.getAttribute("y"));
-                                    double width = Double.parseDouble(bound.getAttribute("width"));
-                                    pointTarget = new Point(x + width / 2, y);
-                                    pointSource = new Point(x + width / 2, initY + environmentHeight);
-                                }
+                            if (bpmnElement != null && messageFlowInfo.getSourceRef().equals(bpmnElement)) {
+                                Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
+                                double x = Double.parseDouble(bound.getAttribute("x"));
+                                double y = Double.parseDouble(bound.getAttribute("y"));
+                                double width = Double.parseDouble(bound.getAttribute("width"));
+                                pointSource = new Point(x + width / 2, y);
+                                break;
                             }
                         }
                     }
+
+                    if (fakeServiceId.equals(targetRef)) {
+                        for (int i = 0; i < shapes.getLength(); i++) {
+                            Element item = (Element) shapes.item(i);
+                            String bpmnElement = item.getAttribute("bpmnElement");
+                            if (bpmnElement != null && fakeServiceId.equals(bpmnElement)) {
+                                Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
+                                double x = Double.parseDouble(bound.getAttribute("x"));
+                                double y = Double.parseDouble(bound.getAttribute("y"));
+                                double width = Double.parseDouble(bound.getAttribute("width"));
+                                pointTarget = new Point(x + width / 2, y);
+                                break;
+                            }
+                        }
+                    } else {
+                        for (int i = 0; i < shapes.getLength(); i++) {
+                            Element item = (Element) shapes.item(i);
+                            String bpmnElement = item.getAttribute("bpmnElement");
+                            if (bpmnElement != null && messageFlowInfo.getTargetRef().equals(bpmnElement)) {
+                                Element bound = (Element) item.getElementsByTagName("dc:Bounds").item(0);
+                                double x = Double.parseDouble(bound.getAttribute("x"));
+                                double y = Double.parseDouble(bound.getAttribute("y"));
+                                double width = Double.parseDouble(bound.getAttribute("width"));
+                                pointTarget = new Point(x + width / 2, y);
+                                break;
+                            }
+                        }
+                    }
+
                     if (pointSource != null && pointTarget != null) {
                         Element flowElement = document.createElement("bpmndi:BPMNEdge");
                         flowElement.setAttribute("id", id + "_di");
@@ -492,11 +516,9 @@ public class BpmnPanel {
                         plane.appendChild(flowElement);
                     }
                 }
-
             }
         }
     }
-
 
     public String testXml() {
         try {
@@ -510,5 +532,4 @@ public class BpmnPanel {
             throw new RuntimeException(e);
         }
     }
-
 }
