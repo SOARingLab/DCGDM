@@ -107,8 +107,10 @@ public class FileController {
             fileExist.mkdirs();
         }
         TransformMultipartFile2File.fileWriterMethod("src/main/resources/collaboration/" + TransformMultipartFile2File.getCurDate() + ".bpmn", str);
-        return str;
+//        return str;
+        return "1";
     }
+
 
 
 

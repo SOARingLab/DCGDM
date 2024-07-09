@@ -281,10 +281,13 @@ public class BpmnPanel {
                 bound.setWidth(environmentWidth);
                 bound.setHeight(environmentHeight);
 
-                ParallelGateway gateway = modelInstance.getModelElementById("Gateway_0cyeibu");
-                AbstractFlowNodeBuilder<?, ?> builder = gateway.builder();
-                for (int i = 0; i < messageFlowInfoList.size(); i++) {
-                    builder = builder.serviceTask("fakeService" + (i + 1))
+
+
+                // Generate fake services based on unmatched message flows
+                for (int i = 0; i < messageFlowMap.size(); i++) {
+                    ParallelGateway gateway = modelInstance.getModelElementById("Gateway_0cyeibu");
+                    AbstractFlowNodeBuilder<?, ?> builder = gateway.builder();
+                    builder.serviceTask("fakeService" + (i + 1))
                             .name("Fake Service " + (i + 1))
                             .connectTo("Gateway_1boer0t");
                 }
@@ -526,7 +529,7 @@ public class BpmnPanel {
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
             transformer.transform(new DOMSource(document), new StreamResult(byteArrayOutputStream));
             String xmlStr = byteArrayOutputStream.toString();
-            System.out.println(xmlStr);
+//            System.out.println(xmlStr);
             return xmlStr;
         } catch (Exception e) {
             throw new RuntimeException(e);
