@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/ContainerTerminal-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ContainerTerminal-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Customs-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Customs-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/CustomsBroker-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/CustomsBroker-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Depot-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Depot-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/FreightForwarder-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/FreightForwarder-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Owner-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Owner-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/SBGS-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/SBGS-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/SGBS-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/SGBS-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ShippingAgency-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ShippingAgency-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Transport-Service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Transport-Service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/consumerTest/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/consumerTest/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/producerTest/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/producerTest/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+  </component>
+</project>

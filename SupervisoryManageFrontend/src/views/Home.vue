@@ -4,9 +4,9 @@
       <div class="span-container" style="padding: 5px" @click="toWelcome">
         <span>&nbsp;&nbsp;</span>
         <img src="../assets/logo.png" alt="" height="40px" width="40px">
-        <span>Process GPT System</span>
+        <span>异构业务流程引擎可靠协作平台</span>
       </div>
-      <el-button type="info" @click="logout">EXIT</el-button>
+      <el-button type="info" @click="logout">退出</el-button>
     </el-header>
     <el-container>
       <el-aside :width="isCollapsed ? '64px' : '250px'">

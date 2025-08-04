@@ -9,19 +9,12 @@ import './assets/css/fonts/iconfont.css'
 import {Message} from 'element-ui'
 import has from './assets/js/permission'
 import global_variable from "@/components/global_variable";
-
-import VueClipboard from 'vue-clipboard2'
-
-
-Vue.use(VueClipboard)
-
-
-
-
+// import echarts from 'echarts'
+// Vue.prototype.$echarts = echarts
 
 Vue.prototype.global = global_variable
-
-axios.defaults.baseURL = 'http://127.0.0.1:8183/'
+axios.defaults.baseURL = 'http://127.0.0.1:8182/'
+// axios.defaults.baseURL = 'http://192.168.1.5:8182/'
 axios.interceptors.request.use(config => {
   config.headers.Token = window.sessionStorage.getItem('token')
   return config

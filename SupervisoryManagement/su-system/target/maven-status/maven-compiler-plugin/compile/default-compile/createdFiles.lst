@@ -12,9 +12,5 @@ org\example\system\service\SysUserService.class
 org\example\system\domin\LoginUser.class
 org\example\system\domin\SysRoleResource.class
 org\example\system\mapper\SysUserMapper.class
-org\example\system\domin\SysApi.class
 org\example\system\mapper\SysRoleResourceMapper.class
 org\example\system\service\SysRoleService.class
-org\example\system\service\impl\SysApiServiceImpl.class
-org\example\system\mapper\SysApiMapper.class
-org\example\system\service\SysApiService.class

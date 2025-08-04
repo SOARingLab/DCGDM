@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="Depot-Service" />
+        <module name="Transport-Service" />
+        <module name="Owner-Service" />
+        <module name="Customs-Service" />
+        <module name="ShippingAgency-Service" />
+        <module name="producerTest" />
+        <module name="consumerTest" />
+        <module name="FreightForwarder-Service" />
+        <module name="SGBS-Service" />
+        <module name="CustomsBroker-Service" />
+        <module name="ContainerTerminal-Service" />
+        <module name="SBGS-Service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="SBGS-Service" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

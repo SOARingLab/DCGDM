@@ -1,0 +1,7 @@
+spring:
+  kafka:
+    #Kafka服务器地址
+    bootstrap-servers: blade04.soaringlab.top:9092
+    producer:
+      #设置数据value的序列化处理类
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

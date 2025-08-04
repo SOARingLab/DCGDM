@@ -24,4 +24,8 @@ export default {
   height: 3px !important;
 }
 
+:root {
+  --main-color: #007bff; /* 根据需要设置主颜色 */
+}
+
 </style>

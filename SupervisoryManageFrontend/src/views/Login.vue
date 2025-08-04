@@ -2,7 +2,7 @@
   <div class="login_container">
     <div class="login_box">
       <div class="title_box">
-        <p>Process GPT Login</p>
+        <p>异构业务流程引擎可靠协作平台</p>
       </div>
       <!-- 登录表单区域 -->
       <el-form class="login_form" :model="loginForm" :rules="loginFormRules" ref="loginFormRef">

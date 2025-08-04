@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/Engines.iml" filepath="$PROJECT_DIR$/.idea/Engines.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SBGS-engine/camunda-engine.iml" filepath="$PROJECT_DIR$/SBGS-engine/camunda-engine.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Depot-engine/camunda-engine (1).iml" filepath="$PROJECT_DIR$/Depot-engine/camunda-engine (1).iml" />
+      <module fileurl="file://$PROJECT_DIR$/owner-engine/camunda-engine (2).iml" filepath="$PROJECT_DIR$/owner-engine/camunda-engine (2).iml" />
+      <module fileurl="file://$PROJECT_DIR$/Customs-engine/camunda-engine (3).iml" filepath="$PROJECT_DIR$/Customs-engine/camunda-engine (3).iml" />
+      <module fileurl="file://$PROJECT_DIR$/Transport-engine/camunda-engine (4).iml" filepath="$PROJECT_DIR$/Transport-engine/camunda-engine (4).iml" />
+      <module fileurl="file://$PROJECT_DIR$/Customs-Broker-engine/camunda-engine (5).iml" filepath="$PROJECT_DIR$/Customs-Broker-engine/camunda-engine (5).iml" />
+      <module fileurl="file://$PROJECT_DIR$/Freight-Forward-engine/camunda-engine (6).iml" filepath="$PROJECT_DIR$/Freight-Forward-engine/camunda-engine (6).iml" />
+      <module fileurl="file://$PROJECT_DIR$/Shipping-Agency-engine/camunda-engine (7).iml" filepath="$PROJECT_DIR$/Shipping-Agency-engine/camunda-engine (7).iml" />
+      <module fileurl="file://$PROJECT_DIR$/Container-Terminal-engine/camunda-engine (8).iml" filepath="$PROJECT_DIR$/Container-Terminal-engine/camunda-engine (8).iml" />
+    </modules>
+  </component>
+</project>

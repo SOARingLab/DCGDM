@@ -29,16 +29,21 @@ public class ShiroConfig {
         // 给shiroFilter设置安全管理器
         shiroFilterFactoryBean.setSecurityManager(defaultWebSecurityManager);
 
+
         // 配置受限资源
         Map<String, String> map = new LinkedHashMap<>();
         // 放行注册和登录
         map.put("/sysUser/register", "anon");
+        // 放行kafka查询
+        map.put("/pubSub/**", "anon");
+        // 放行引擎查询
+        map.put("/engine/**", "anon");
+        // 放行主题查询
+        map.put("/topic/**", "anon");
+        // 放行流程查询
+        map.put("/process/**", "anon");
         map.put("/sysUser/login", "anon");
         map.put("/sysUser/**", "anon");
-
-        map.put("/sysApi/**", "anon");
-
-
         // 放行图片查询
         map.put("/images/**", "anon");
         // 请求这个资源需要认证与授权

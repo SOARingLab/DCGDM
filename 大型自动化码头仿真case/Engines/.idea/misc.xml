@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/SBGS-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/Depot-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/owner-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/Customs-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/Transport-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/Customs-Broker-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/Freight-Forward-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/Shipping-Agency-engine/pom.xml" />
+        <option value="$PROJECT_DIR$/Container-Terminal-engine/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="11" project-jdk-type="JavaSDK" />
+  <component name="ProjectType">
+    <option name="id" value="jpab" />
+  </component>
+</project>
